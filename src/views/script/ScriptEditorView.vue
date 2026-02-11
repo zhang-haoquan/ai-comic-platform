@@ -9,7 +9,29 @@
           {{ getStatusLabel(currentScript?.status) }}
         </el-tag>
       </div>
-      <div class="flex gap-3">
+      <div class="flex gap-3 items-center">
+        <!-- Model Selector -->
+        <el-select
+          v-model="selectedAiModel"
+          placeholder="选择 AI 模型"
+          class="w-40"
+          :loading="modelSwitching"
+          @change="handleModelChange"
+          aria-label="选择 AI 模型"
+        >
+          <el-option
+            v-for="model in aiModels"
+            :key="model.value"
+            :label="model.label"
+            :value="model.value"
+            :disabled="!model.available"
+          >
+            <div class="flex items-center justify-between w-full">
+              <span>{{ model.label }}</span>
+              <el-tag v-if="!model.available" size="small" type="info">维护中</el-tag>
+            </div>
+          </el-option>
+        </el-select>
         <el-button :icon="DocumentCopy" @click="showVersions = true">版本历史</el-button>
         <el-button :icon="Upload" @click="showUpload = true">上传剧本</el-button>
         <el-button type="primary" :loading="parsing" @click="handleParse">
@@ -101,19 +123,21 @@
           <template #header>
             <span class="section-title">AI 工具</span>
           </template>
-          <div class="space-y-2">
-            <el-button class="w-full justify-start" text>
-              智能续写
-            </el-button>
-            <el-button class="w-full justify-start" text :icon="Edit">
-              润色优化
-            </el-button>
-            <el-button class="w-full justify-start" text :icon="Search">
-              情节分析
-            </el-button>
-            <el-button class="w-full justify-start" text :icon="View">
-              预览效果
-            </el-button>
+          <div class="space-y-4">
+            <div class="space-y-2">
+              <el-button class="w-full justify-start" text @click="triggerAiAction('continuation')">
+                智能续写
+              </el-button>
+              <el-button class="w-full justify-start" text :icon="Edit" @click="triggerAiAction('polishing')">
+                润色优化
+              </el-button>
+              <el-button class="w-full justify-start" text :icon="Search" @click="triggerAiAction('analysis')">
+                情节分析
+              </el-button>
+              <el-button class="w-full justify-start" text :icon="View" @click="triggerAiAction('preview')">
+                预览效果
+              </el-button>
+            </div>
           </div>
         </el-card>
       </div>
@@ -208,11 +232,63 @@ import {
   DocumentCopy, Upload, Lock, Check, Edit, Search, View, ArrowLeft
 } from '@element-plus/icons-vue'
 import { useScriptStore } from '@/stores'
+import { ElMessage } from 'element-plus'
 import type { Script } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
 const scriptStore = useScriptStore()
+
+// AI Models Configuration
+const aiModels = [
+  { label: 'DeepSeek R1', value: 'deepseek-r1', available: true },
+  { label: 'DeepSeek V3', value: 'deepseek-v3', available: true },
+  { label: 'Gemini 3 Pro', value: 'gemini-3-pro', available: true },
+]
+
+const selectedAiModel = ref('deepseek-r1')
+const modelSwitching = ref(false)
+
+const handleModelChange = async (val: string) => {
+  modelSwitching.value = true
+  try {
+    // Simulate model switching latency and potential error
+    await new Promise((resolve, reject) => {
+      setTimeout(() => {
+        if (Math.random() < 0.1) {
+          reject(new Error('Model unavailable'))
+        } else {
+          resolve(true)
+        }
+      }, 500)
+    })
+    
+    localStorage.setItem('preferred_script_model', val)
+    ElMessage.success(`已切换至 ${aiModels.find(m => m.value === val)?.label}`)
+    // Re-initialize AI tools here if needed
+  } catch (error) {
+    ElMessage.error('模型切换失败，请重试')
+    // Revert selection if needed, or keep as is but mark as error state
+    console.error('Model switch error:', error)
+  } finally {
+    modelSwitching.value = false
+  }
+}
+
+const triggerAiAction = (action: string) => {
+  if (!selectedAiModel.value) {
+    ElMessage.warning('请先选择 AI 模型')
+    return
+  }
+  ElMessage.info(`正在使用 ${aiModels.find(m => m.value === selectedAiModel.value)?.label} 执行${action}...`)
+}
+
+onMounted(() => {
+  const savedModel = localStorage.getItem('preferred_script_model')
+  if (savedModel && aiModels.some(m => m.value === savedModel)) {
+    selectedAiModel.value = savedModel
+  }
+})
 
 const currentScript = computed(() => scriptStore.currentScript)
 const parsing = computed(() => scriptStore.parsing)

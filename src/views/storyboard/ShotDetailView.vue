@@ -184,7 +184,34 @@
           <template #header>
             <div class="flex items-center justify-between">
               <span class="text-base font-bold text-comic-text">图片生成模块</span>
-              <div class="flex gap-2">
+              <div class="flex items-center gap-2">
+                <!-- Image Model Selector -->
+                <el-tooltip
+                  :content="getSelectedImageModelDesc"
+                  placement="top"
+                  :show-after="500"
+                >
+                  <el-select
+                    v-model="selectedImageModel"
+                    size="small"
+                    class="w-40"
+                    placeholder="选择模型"
+                    @change="handleImageModelChange"
+                  >
+                    <el-option
+                      v-for="model in imageModels"
+                      :key="model.value"
+                      :label="model.label"
+                      :value="model.value"
+                    >
+                      <div class="flex items-center justify-between w-full">
+                        <span>{{ model.label }}</span>
+                        <el-tag v-if="model.tag" size="small" effect="plain" class="ml-2">{{ model.tag }}</el-tag>
+                      </div>
+                    </el-option>
+                  </el-select>
+                </el-tooltip>
+
                 <el-button type="primary" size="small" :loading="imageGenerating" @click="generateStoryboardImages">生成</el-button>
                 <div class="hidden md:flex gap-2">
                   <el-button text @click="copyPrompt">复制</el-button>
@@ -247,6 +274,33 @@
               <div class="flex items-center justify-between">
                 <span class="text-base font-bold text-comic-text">分镜视频生成模块</span>
                 <div class="flex items-center gap-2">
+                   <!-- Video Model Selector -->
+                   <el-select
+                     v-model="selectedVideoModel"
+                     size="small"
+                     class="w-40"
+                     placeholder="选择模型"
+                     @change="handleVideoModelChange"
+                   >
+                     <el-option
+                       v-for="model in videoModels"
+                       :key="model.value"
+                       :label="model.label"
+                       :value="model.value"
+                       :disabled="!model.available"
+                     >
+                       <div class="flex items-center justify-between w-full">
+                         <div class="flex items-center gap-2">
+                           <span>{{ model.label }}</span>
+                         </div>
+                         <div class="flex items-center gap-1">
+                           <el-tag v-if="model.isNew" size="small" type="danger" effect="dark" class="scale-75 origin-right">NEW</el-tag>
+                           <el-tag v-if="model.recommended" size="small" type="warning" effect="plain" class="scale-75 origin-right">推荐</el-tag>
+                         </div>
+                       </div>
+                     </el-option>
+                   </el-select>
+
                    <span v-if="videoGenerating" class="text-xs text-primary-500 mr-2">生成中 50%</span>
                    <el-button type="primary" size="small" :icon="VideoCamera" :loading="videoGenerating" @click="generateVideo">生成</el-button>
                 </div>
@@ -395,6 +449,24 @@ const showAddCharacter = ref(false)
 const showAddScene = ref(false)
 const imageDownloadLoading = reactive<Record<number, boolean>>({})
 
+// Image Models
+const imageModels = [
+  { label: 'Nano Banana', value: 'nano-banana', tag: '快速', desc: '生成速度极快，适合快速验证构图' },
+  { label: 'SD XL', value: 'stable-diffusion-xl', tag: '高质量', desc: '画面细节丰富，光影效果极佳' },
+  { label: 'Midjourney V6', value: 'midjourney-v6', tag: '艺术', desc: '艺术风格强烈，适合风格化创作' },
+]
+const selectedImageModel = ref('nano-banana')
+
+const getSelectedImageModelDesc = computed(() => {
+  const model = imageModels.find(m => m.value === selectedImageModel.value)
+  return model ? `${model.label}: ${model.desc}` : ''
+})
+
+const handleImageModelChange = (val: string) => {
+  // Logic to update generation parameters based on model
+  ElMessage.success(`已切换至 ${imageModels.find(m => m.value === val)?.label}`)
+}
+
 // Video Generation State
 const videoPromptContent = ref('')
 const videoGenerating = ref(false)
@@ -405,6 +477,37 @@ const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const isMuted = ref(false)
+
+// Video Models
+const videoModels = computed(() => [
+  { 
+    label: 'Seedance', 
+    value: 'seedance', 
+    available: true, 
+    isNew: false,
+    recommended: shotForm.value.movement === 'static' || shotForm.value.movement === 'pan'
+  },
+  { 
+    label: 'Sora', 
+    value: 'sora', 
+    available: true, 
+    isNew: true,
+    recommended: ['dolly', 'truck', 'crane'].includes(shotForm.value.movement)
+  },
+  { 
+    label: 'Runway Gen-2', 
+    value: 'runway-gen2', 
+    available: false, 
+    isNew: false,
+    recommended: false 
+  },
+])
+const selectedVideoModel = ref('seedance')
+
+const handleVideoModelChange = (val: string) => {
+  ElMessage.success(`已切换至 ${videoModels.value.find(m => m.value === val)?.label}`)
+  // Future: Save to history for comparison
+}
 
 // Step Process State
 const currentStep = ref(1)
