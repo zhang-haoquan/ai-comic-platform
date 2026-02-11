@@ -23,7 +23,7 @@
       <el-input
         v-model="worldView"
         type="textarea"
-        :rows="3"
+        :rows="8"
         placeholder="AI识别的世界观描述..."
       />
     </el-card>
@@ -50,7 +50,7 @@
                 <h3 class="font-medium text-comic-text">{{ character.name }}</h3>
                 <el-tag v-if="character.gender" size="small">{{ character.gender === 'male' ? '男' : '女' }}</el-tag>
               </div>
-              <p class="text-sm text-comic-muted mt-1 line-clamp-2">{{ character.description }}</p>
+              <p class="text-sm text-comic-muted mt-1 whitespace-pre-wrap leading-relaxed">{{ character.description }}</p>
               <div class="flex flex-wrap gap-1 mt-2">
                 <el-tag v-for="tag in character.tags" :key="tag" size="small" type="info">{{ tag }}</el-tag>
               </div>
@@ -90,7 +90,7 @@
             <div class="flex-1 min-w-0">
               <h3 class="font-medium text-comic-text">{{ scene.name }}</h3>
               <p class="text-sm text-comic-muted mt-1">{{ scene.location }} · {{ scene.time }}</p>
-              <p class="text-sm text-comic-text mt-2 line-clamp-2">{{ scene.description }}</p>
+              <p class="text-sm text-comic-text mt-2 whitespace-pre-wrap leading-relaxed">{{ scene.description }}</p>
               <div class="flex flex-wrap gap-1 mt-2">
                 <el-tag size="small" type="info">{{ scene.style }}</el-tag>
                 <el-tag size="small" type="info">{{ scene.atmosphere }}</el-tag>
